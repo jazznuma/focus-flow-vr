@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090d23">
+  <meta name="description" content="星空の中で、近くと遠くに目を向けるWebXRゲーム">
+  <title>Focus Flow — 星空のリズム庭園</title>
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+  <style>
+    :root{color-scheme:dark;--white:#f4f4ff;--muted:#b7bdd9;--line:#ffffff25;--cyan:#8be7e9}
+    *{box-sizing:border-box}body{margin:0;min-height:100svh;background:radial-gradient(ellipse at 50% 20%,#29396e,#111a3a 44%,#080c20 86%);color:var(--white);font-family:system-ui,"Noto Sans JP",sans-serif}
+    .page{width:min(980px,100%);margin:auto;padding:25px 24px;position:relative}.top{display:flex;justify-content:space-between;color:#d3daf7;font-size:12px;letter-spacing:.15em}.pill{border:1px solid var(--line);border-radius:99px;padding:7px 12px;letter-spacing:0}
+    .hero{text-align:center;padding:54px 0 26px}.eyebrow{color:var(--cyan);font-size:12px;letter-spacing:.2em}.hero h1{font-size:clamp(38px,7vw,68px);font-weight:600;letter-spacing:.05em;margin:13px 0}.hero p{color:var(--muted);line-height:1.9;margin:0}
+    .label{font-size:12px;letter-spacing:.12em;color:#d8dcf5;margin:17px 0 11px}.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.mode{color:var(--white);text-align:left;min-height:133px;padding:16px;border:1px solid var(--line);border-radius:17px;background:#ffffff08;cursor:pointer;transition:.18s}.mode:hover,.mode.selected{border-color:#8be7e9aa;background:#80e5e914;transform:translateY(-2px)}.mode .icon{font-size:21px}.mode h2{font-size:16px;margin:8px 0 5px}.mode p{font-size:12px;line-height:1.6;color:var(--muted);margin:0}
+    .actions{display:flex;justify-content:center;gap:11px;margin:19px 0 10px}.button{border-radius:999px;min-height:49px;padding:0 23px;font-weight:650;font-size:14px;cursor:pointer}.primary{border:0;color:#0b1728;background:linear-gradient(100deg,#9aefeb,#b9d9ff)}.secondary{border:1px solid var(--line);background:#ffffff0b;color:var(--white)}.hint{text-align:center;color:#aeb7d9;font-size:12px;min-height:20px}
+    .note{max-width:730px;margin:26px auto 0;padding:14px 16px;border:1px solid #ffffff20;border-radius:14px;background:#080c226e;color:#b7bdd9;font-size:12px;line-height:1.7}.note strong{color:#e7e8f7}.footer{text-align:center;color:#8992b6;font-size:11px;padding:20px 0 6px}
+    #world{position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none}body.playing #world{z-index:1;opacity:1;pointer-events:auto}body.playing .page{visibility:hidden}#exit{display:none;position:fixed;z-index:3;top:14px;right:14px;padding:10px 15px;border:1px solid #ffffff50;border-radius:30px;background:#111a3add;color:white;cursor:pointer}body.playing #exit{display:block}
+    @media(max-width:650px){.page{padding:20px 15px}.hero{padding:38px 0 20px}.modes{grid-template-columns:1fr}.mode{min-height:94px;padding:13px}.mode h2{margin:5px 0 3px}.actions{flex-direction:column}.button{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top"><span>FOCUS FLOW · WEBXR</span><span class="pill">QUEST 3 READY</span></header>
+    <section class="hero"><div class="eyebrow">A LITTLE STARLIGHT, A LITTLE RHYTHM</div><h1>星空のリズム庭園</h1><p>星を見つけて、ゆっくり目を向ける。<br>静かな時間も、リズム遊びも気分に合わせて。</p></section>
+    <div class="label">今夜のモードを選ぶ</div>
+    <section class="modes" aria-label="ゲームモード">
+      <button class="mode selected" data-mode="focus"><span class="icon">✦</span><h2>星を見つける</h2><p>近くと遠くに現れる星を順番に探そう。</p></button>
+      <button class="mode" data-mode="calm"><span class="icon">☾</span><h2>流星を待つ</h2><p>遠くの星を眺めながら、流れる光を探そう。</p></button>
+      <button class="mode" data-mode="rhythm"><span class="icon">♫</span><h2>リズムキャッチ</h2><p>光る星をテンポよく選んでコンボ。</p></button>
+    </section>
+    <div class="actions"><button class="button primary" id="start">VR体験をはじめる</button><button class="button secondary" id="preview">画面で試す</button></div>
+    <div class="hint" id="hint">VRではコントローラーのレーザーを星に合わせて選びます。</div>
+    <aside class="note"><strong>視覚を使ったゲーム体験です。</strong>画面上の距離表現は、現実の目のピント調節を再現するものではありません。違和感や疲れを感じたら、すぐに終了して休憩してください。</aside>
+    <footer class="footer">まずは短い時間から、心地よいペースで。</footer>
+  </main>
+  <button id="exit">体験を終了</button>
+  <div id="world">
+    <a-scene embedded vr-mode-ui="enabled: false" background="color: #080d27" renderer="colorManagement: true; antialias: true">
+      <a-entity light="type: ambient; color: #a6b5ff; intensity: .8"></a-entity><a-entity light="type: point; color: #70d8ed; intensity: 1.2; distance: 18" position="0 3 -4"></a-entity><a-sky color="#080d27"></a-sky>
+      <a-entity id="starfield"></a-entity><a-entity id="targets"></a-entity>
+      <a-entity position="0 2.35 -4"><a-text id="heading" value="星を見つけよう" align="center" color="#f2f4ff" width="5"></a-text><a-text id="instruction" value="星にレーザーを合わせて選択" align="center" color="#b8c3ea" width="4" position="0 -.32 0"></a-text></a-entity>
+      <a-entity position="0 1.85 -3.6"><a-text id="score" value="0 / 0" align="center" color="#9af1ed" width="3"></a-text></a-entity>
+      <a-entity position="0 0 0"><a-camera position="0 1.6 0"><a-cursor rayOrigin="mouse" raycaster="objects: .target; far: 12" fuse="false" material="color: #a9f5f1; shader: flat" geometry="primitive: ring; radiusInner: .009; radiusOuter: .014"></a-cursor></a-camera>
+        <a-entity laser-controls="hand: left" raycaster="objects: .target; far: 12" line="color: #8be8f0; opacity: .65"></a-entity><a-entity laser-controls="hand: right" raycaster="objects: .target; far: 12" line="color: #ffd48c; opacity: .65"></a-entity></a-entity>
+    </a-scene>
+  </div>
+  <script>
+  (()=>{
+    const scene=document.querySelector('a-scene'), root=document.querySelector('#targets'), field=document.querySelector('#starfield');
+    const heading=document.querySelector('#heading'), instruction=document.querySelector('#instruction'), scoreText=document.querySelector('#score'), hint=document.querySelector('#hint');
+    const names={focus:['星を見つけよう','近くと遠くの星を順番に選択'],calm:['流星を待とう','星を選んで、ゆっくり空を眺めよう'],rhythm:['リズムにのろう','光る星をテンポよくキャッチ']};
+    let mode='focus',score=0,step=0,desktop=false;
+    const add=(tag,attrs,parent)=>{const el=document.createElement(tag);for(const [key,value] of Object.entries(attrs))el.setAttribute(key,value);parent.appendChild(el);return el};
+    function update(){scoreText.setAttribute('value','✦  '+score)}
+    function makeStarfield(){field.innerHTML='';for(let i=0;i<90;i++){const x=(Math.random()-.5)*16,y=.25+Math.random()*6,z=-2-Math.random()*12;add('a-sphere',{position:`${x} ${y} ${z}`,radius:(.006+Math.random()*.014).toFixed(3),material:'color: #dce8ff; emissive: #8ea9ff; emissiveIntensity: .65; opacity: .8; transparent: true'},field)}}
+    function endRound(title,message){root.innerHTML='';heading.setAttribute('value',title);instruction.setAttribute('value',message)}
+    function makeTarget({x,y,z,color,label,radius=.25,onSelect}){
+      const el=add('a-sphere',{class:'target',position:`${x} ${y} ${z}`,radius,material:`color: ${color}; emissive: ${color}; emissiveIntensity: .75; roughness: .25`,animation__pulse:'property: scale; to: 1.12 1.12 1.12; dir: alternate; dur: 900; loop: true; easing: easeInOutSine'},root);
+      add('a-sphere',{radius:radius*1.55,material:`color: ${color}; emissive: ${color}; emissiveIntensity: .3; transparent: true; opacity: .13`},el);
+      if(label)add('a-text',{value:label,align:'center',color:'#152039',width:2.5,position:'0 0 .05'},el);
+      el.addEventListener('click',()=>onSelect(el));return el
+    }
+    function next(){root.innerHTML='';if(step>=8){endRound('よくできました','星空でひと休み。いつでももう一度遊べます');return}step++;
+      const near=step%2===1,x=(Math.random()-.5)*2.3,y=1.25+Math.random()*1.25,z=near?-3:-6;
+      heading.setAttribute('value',near?'手前の星を見つけて':'遠くの星を見つけて');instruction.setAttribute('value','星にレーザーを合わせて選択');
+      makeTarget({x,y,z,color:near?'#82e8e9':'#ffb7d9',label:near?'近く':'遠く',radius:near?.25:.34,onSelect:()=>{score++;update();next()}})
+    }
+    function nextCalm(){root.innerHTML='';if(step>=7){endRound('流星観測おしまい','ゆっくり休憩しましょう');return}step++;const x=(Math.random()-.5)*3.8,y=.7+Math.random()*2.35;
+      heading.setAttribute('value','遠くの星をながめよう');instruction.setAttribute('value','見つけた星を選んでね');
+      makeTarget({x,y,z:-7.5,color:'#c4d1ff',label:'✦',radius:.2,onSelect:()=>{score++;update();nextCalm()}});
+      const streak=add('a-sphere',{position:`${(Math.random()-.5)*4} ${.7+Math.random()*2.2} -6`,radius:.055,material:'color: #fff1b8; emissive: #ffca7b; emissiveIntensity: 1.4'},root);streak.setAttribute('animation__drift','property: position; to: 3 .2 -8; dur: 3000; easing: linear')
+    }
+    function nextRhythm(){root.innerHTML='';if(step>=12){endRound('ナイスリズム','星のリズムを楽しめました');return}step++;const x=(step%2?-1:1)*(1+Math.random()*.7),y=1+Math.random()*1.5,z=-4-Math.random()*1.3;
+      heading.setAttribute('value','光る星をキャッチ');instruction.setAttribute('value','左右の星をテンポよく選択');
+      const el=makeTarget({x,y,z,color:step%2?'#8de9ed':'#ffb5d7',label:step%2?'◀':'▶',radius:.3,onSelect:()=>{score++;update();nextRhythm()}});el.setAttribute('animation__approach',`property: position; from: ${x} ${y} -8; to: ${x} ${y} ${z}; dur: 1450; easing: easeOutQuad`)
+    }
+    function start(){root.innerHTML='';score=0;step=0;update();makeStarfield();heading.setAttribute('value',names[mode][0]);instruction.setAttribute('value',names[mode][1]);if(mode==='focus')next();else if(mode==='calm')nextCalm();else nextRhythm()}
+    document.querySelectorAll('.mode').forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.mode;document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('selected',b===button));hint.textContent=mode==='rhythm'?'光る星をレーザーで選択。ゆったりテンポのリズムゲームです。':'VRではコントローラーのレーザーを星に合わせて選びます。'}));
+    document.querySelector('#start').addEventListener('click',async()=>{if(!scene.hasLoaded)await new Promise(resolve=>scene.addEventListener('loaded',resolve,{once:true}));start();document.body.classList.add('playing');try{if(navigator.xr&&await navigator.xr.isSessionSupported('immersive-vr'))await scene.enterVR();else hint.textContent='このブラウザーではVRを使えません。画面で試すをお使いください。'}catch{document.body.classList.remove('playing');hint.textContent='VRを開始できませんでした。画面で試すをお試しください。'}});
+    document.querySelector('#preview').addEventListener('click',()=>{desktop=true;start();document.body.classList.add('playing');hint.textContent='画面をドラッグして視点を動かし、星にカーソルを合わせてクリック。'});
+    document.querySelector('#exit').addEventListener('click',()=>{if(scene.is('vr-mode'))scene.exitVR();document.body.classList.remove('playing');root.innerHTML=''});
+    scene.addEventListener('exit-vr',()=>{if(!desktop)document.body.classList.remove('playing')});scene.addEventListener('enter-vr',()=>{desktop=false});
+  })();
+  </script>
+</body>
+</html>
